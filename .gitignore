@@ -1,0 +1,9 @@
+*.pdb
+Build/
+Intermediate/
+Saved/
+Plugins/CreaturePlugin/Intermediate
+ProjectC.opensdf
+ProjectC.sln
+ProjectC.sdf
+ProjectC.v12.suo
