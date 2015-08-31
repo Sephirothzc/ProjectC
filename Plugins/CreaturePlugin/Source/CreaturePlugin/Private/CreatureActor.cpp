@@ -112,6 +112,7 @@ void ACreatureActor::PostEditChangeProperty(FPropertyChangedEvent & PropertyChan
 	for (TArray<FAnimationNotifyFrameNode>::TIterator itr(register_notify_frame_node_array); itr; ++itr) {
 		register_notify_frame_map.Add(itr->AnimationName, itr->NotifyFrame);
 	}
+	Super::PostEditChangeProperty(PropertyChangedEvent);
 }
 
 #endif
@@ -140,7 +141,7 @@ bool ACreatureActor::InitCreatureRender()
 		auto load_filename = ConvertToString(cur_creature_filename);
 		// try to load creature
 		ACreatureActor::LoadDataPacket(load_filename);
-		LoadCreature(load_filename);
+		LoadCreature(FString(load_filename.c_str()));
 
 		// try to load all animations
 		auto all_animation_names = creature_manager->GetCreature()->GetAnimationNames();
@@ -327,15 +328,16 @@ void ACreatureActor::LoadAnimation(const std::string& filename_in, const std::st
 	global_animations[cur_token] = new_animation;
 }
 
-void ACreatureActor::LoadCreature(const std::string& filename_in)
+void ACreatureActor::LoadCreature(const FString& filename_in)
 {
 	if (!creature_mesh)
 	{
 		return;
 	}
+	
+	std::string temp_string(TCHAR_TO_ANSI(*filename_in));
 
-
-	auto load_data = global_load_data_packets[filename_in];
+	auto load_data = global_load_data_packets[temp_string];
 
 	std::shared_ptr<CreatureModule::Creature> new_creature =
 		std::make_shared<CreatureModule::Creature>(*load_data);
@@ -345,6 +347,7 @@ void ACreatureActor::LoadCreature(const std::string& filename_in)
 	draw_triangles.SetNum(creature_manager->GetCreature()->GetTotalNumIndices() / 3, true);
 
 	creature_mesh->SetProceduralMeshTriangles(draw_triangles);
+	region_alphas.Empty();
 }
 
 bool ACreatureActor::AddLoadedAnimation(const std::string& filename_in, const std::string& name_in)
@@ -558,6 +561,10 @@ ACreatureActor::IsBluePrintBonesCollide(FVector test_point, float bone_size)
 void ACreatureActor::SetIsDisabled(bool flag_in)
 {
 	is_disabled = flag_in;
+}
+
+void ACreatureActor::SetSetMeshMaterial(int32 ElementIndex, UMaterialInterface* InMaterial) {
+	creature_mesh->SetMaterial(ElementIndex, InMaterial);
 }
 
 void ACreatureActor::SetDriven(bool flag_in)

@@ -11,7 +11,7 @@ namespace UnrealBuildTool.Rules
 
         private string ThirdPartyPath
         {
-            get { return "G:\\MyProject\\ProjectC\\Plugins\\ThirdParty"; }
+            get { return "H:\\UnrealProject\\ProjectC\\Plugins\\ThirdParty"; }
         }
 
         public bool LoadCreatureLib(TargetInfo Target)

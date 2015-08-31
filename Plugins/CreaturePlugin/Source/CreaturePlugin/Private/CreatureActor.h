@@ -76,7 +76,7 @@ protected:
 
 	void UpdateCreatureRender();
 
-	bool InitCreatureRender();
+
 
 	void FillBoneData();
 
@@ -88,6 +88,9 @@ protected:
 
 public:
 	ACreatureActor();
+
+	UFUNCTION(BlueprintCallable, Category = "Components|Creature")
+	bool InitCreatureRender();
 
 	// Allow viewing/changing the Material ot the procedural Mesh in editor (if placed in a level at construction)
 	UPROPERTY(VisibleAnywhere, Category=Materials)
@@ -156,7 +159,8 @@ public:
 	static void LoadAnimation(const std::string& filename_in, const std::string& name_in);
 
 	// Loads the creature character from a file
-	void LoadCreature(const std::string& filename_in);
+	UFUNCTION(BlueprintCallable, Category = "Components|Creature")
+	void LoadCreature(const FString& filename_in);
 
 	// Adds a loaded animation onto the creature character
 	bool AddLoadedAnimation(const std::string& filename_in, const std::string& name_in);
@@ -227,6 +231,9 @@ public:
 	// Blueprint function that turns on/turns off internal updates of this object
 	UFUNCTION(BlueprintCallable, Category = "Components|Creature")
 	void SetIsDisabled(bool flag_in);
+
+	UFUNCTION(BlueprintCallable, Category = "Components|Creature")
+	void SetSetMeshMaterial(int32 ElementIndex, UMaterialInterface* InMaterial);
 	
 	void SetDriven(bool flag_in);
 
