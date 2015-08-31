@@ -3,6 +3,7 @@ Build/
 Intermediate/
 Saved/
 Plugins/CreaturePlugin/Intermediate
+Plugins/CreaturePlugin/Source/CreaturePlugin/CreaturePlugin.Build.cs
 ProjectC.opensdf
 ProjectC.sln
 ProjectC.sdf

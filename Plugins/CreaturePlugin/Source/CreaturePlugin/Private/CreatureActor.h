@@ -23,6 +23,17 @@ struct FCreatureBoneData
 	FString name;
 };
 
+USTRUCT()
+struct FAnimationNotifyFrameNode {
+	GENERATED_USTRUCT_BODY()
+
+	UPROPERTY(EditAnywhere, Category = "Components|Creature")
+	FString AnimationName;
+	
+	UPROPERTY(EditAnywhere, Category = "Components|Creature")
+	TArray<int32> NotifyFrame;
+};
+
 // Blueprint event delegates event declarations
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCreatureAnimationStartEvent, float, frame);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCreatureAnimationEndEvent, float, frame);
@@ -61,6 +72,7 @@ protected:
 	FCriticalSection  msg_lock;
 
 	TArray<int32> register_notify_frame_queue;
+	TMap< FString, TArray<int32> > register_notify_frame_map;
 
 	void UpdateCreatureRender();
 
@@ -129,10 +141,10 @@ public:
 	FCreatureAnimationNotifyEvent CreatureAnimationNotifyEvent;
 
 	UPROPERTY(EditAnywhere, Category = "Components|Creature")
-	TArray<int32> register_notify_frame;
+	TArray<FAnimationNotifyFrameNode> register_notify_frame_node_array;
 
 #if WITH_EDITOR
-	//virtual void PostEditChangeProperty(FPropertyChangedEvent & PropertyChangedEvent);
+	virtual void PostEditChangeProperty(FPropertyChangedEvent & PropertyChangedEvent);
 #endif
 
 	virtual void OnConstruction(const FTransform & Transform);

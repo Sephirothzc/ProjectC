@@ -98,18 +98,22 @@ void ACreatureActor::OnConstruction(const FTransform & Transform)
 }
 
 #if WITH_EDITOR
-/*
+
 void ACreatureActor::PostEditChangeProperty(FPropertyChangedEvent & PropertyChangedEvent)
 {
-	bool retval = InitCreatureRender();
+	//bool retval = InitCreatureRender();
 
-	if (retval)
-	{
-		Tick(0.1f);
+	//if (retval)
+	//{
+	//	Tick(0.1f);
+	//}
+
+	register_notify_frame_map.Empty();
+	for (TArray<FAnimationNotifyFrameNode>::TIterator itr(register_notify_frame_node_array); itr; ++itr) {
+		register_notify_frame_map.Add(itr->AnimationName, itr->NotifyFrame);
 	}
-
 }
-*/
+
 #endif
 
 bool ACreatureActor::InitCreatureRender()
@@ -263,6 +267,12 @@ void ACreatureActor::BeginPlay()
 	is_ready_play = true;
 
 	region_alpha_map.Empty();
+	
+	register_notify_frame_map.Empty();
+	for (TArray<FAnimationNotifyFrameNode>::TIterator itr(register_notify_frame_node_array); itr; ++itr) {
+		register_notify_frame_map.Add(itr->AnimationName, itr->NotifyFrame);
+	}
+
 	Super::BeginPlay();
 }
 
@@ -618,9 +628,9 @@ void ACreatureActor::ParseEvents(float deltaTime)
 		float diff_val_start = fabs(cur_runtime - cur_start_time);
 		const float cutoff = 0.01f;
 
-		if (register_notify_frame.Num() > 0) {
+		if (register_notify_frame_map.Num() > 0) {
 			if (diff_val_start <= cutoff) {
-				register_notify_frame_queue = register_notify_frame;
+				register_notify_frame_queue = *register_notify_frame_map.Find(FString(cur_animation_name.c_str()));
 				register_notify_frame_queue.Sort([](const int32& LHS, const int32& RHS)  { return LHS < RHS; });
 
 				for (TArray<int32>::TIterator left_itr(register_notify_frame_queue); left_itr; ++left_itr) {
