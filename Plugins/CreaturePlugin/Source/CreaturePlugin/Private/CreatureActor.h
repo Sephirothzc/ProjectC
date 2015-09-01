@@ -159,8 +159,7 @@ public:
 	static void LoadAnimation(const std::string& filename_in, const std::string& name_in);
 
 	// Loads the creature character from a file
-	UFUNCTION(BlueprintCallable, Category = "Components|Creature")
-	void LoadCreature(const FString& filename_in);
+	void LoadCreature(const std::string& filename_in);
 
 	// Adds a loaded animation onto the creature character
 	bool AddLoadedAnimation(const std::string& filename_in, const std::string& name_in);

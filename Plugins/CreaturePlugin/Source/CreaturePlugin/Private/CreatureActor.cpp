@@ -141,7 +141,7 @@ bool ACreatureActor::InitCreatureRender()
 		auto load_filename = ConvertToString(cur_creature_filename);
 		// try to load creature
 		ACreatureActor::LoadDataPacket(load_filename);
-		LoadCreature(FString(load_filename.c_str()));
+		LoadCreature(load_filename);
 
 		// try to load all animations
 		auto all_animation_names = creature_manager->GetCreature()->GetAnimationNames();
@@ -328,16 +328,14 @@ void ACreatureActor::LoadAnimation(const std::string& filename_in, const std::st
 	global_animations[cur_token] = new_animation;
 }
 
-void ACreatureActor::LoadCreature(const FString& filename_in)
+void ACreatureActor::LoadCreature(const std::string& filename_in)
 {
 	if (!creature_mesh)
 	{
 		return;
 	}
 	
-	std::string temp_string(TCHAR_TO_ANSI(*filename_in));
-
-	auto load_data = global_load_data_packets[temp_string];
+	auto load_data = global_load_data_packets[filename_in];
 
 	std::shared_ptr<CreatureModule::Creature> new_creature =
 		std::make_shared<CreatureModule::Creature>(*load_data);
