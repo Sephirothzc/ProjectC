@@ -10,6 +10,8 @@ public class ProjectC : ModuleRules
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 
+        DynamicallyLoadedModuleNames.AddRange(new string[] { "CreaturePlugin" });
+
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
 		
