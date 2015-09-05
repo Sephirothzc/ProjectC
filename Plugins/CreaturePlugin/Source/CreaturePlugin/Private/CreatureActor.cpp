@@ -98,23 +98,18 @@ void ACreatureActor::OnConstruction(const FTransform & Transform)
 }
 
 #if WITH_EDITOR
-
+/*
 void ACreatureActor::PostEditChangeProperty(FPropertyChangedEvent & PropertyChangedEvent)
 {
-	//bool retval = InitCreatureRender();
+	bool retval = InitCreatureRender();
 
-	//if (retval)
-	//{
-	//	Tick(0.1f);
-	//}
-
-	register_notify_frame_map.Empty();
-	for (TArray<FAnimationNotifyFrameNode>::TIterator itr(register_notify_frame_node_array); itr; ++itr) {
-		register_notify_frame_map.Add(itr->AnimationName, itr->NotifyFrame);
+	if (retval)
+	{
+		Tick(0.1f);
 	}
-	Super::PostEditChangeProperty(PropertyChangedEvent);
-}
 
+}
+*/
 #endif
 
 bool ACreatureActor::InitCreatureRender()
@@ -268,12 +263,6 @@ void ACreatureActor::BeginPlay()
 	is_ready_play = true;
 
 	region_alpha_map.Empty();
-	
-	register_notify_frame_map.Empty();
-	for (TArray<FAnimationNotifyFrameNode>::TIterator itr(register_notify_frame_node_array); itr; ++itr) {
-		register_notify_frame_map.Add(itr->AnimationName, itr->NotifyFrame);
-	}
-
 	Super::BeginPlay();
 }
 
@@ -334,7 +323,8 @@ void ACreatureActor::LoadCreature(const std::string& filename_in)
 	{
 		return;
 	}
-	
+
+
 	auto load_data = global_load_data_packets[filename_in];
 
 	std::shared_ptr<CreatureModule::Creature> new_creature =
@@ -345,7 +335,6 @@ void ACreatureActor::LoadCreature(const std::string& filename_in)
 	draw_triangles.SetNum(creature_manager->GetCreature()->GetTotalNumIndices() / 3, true);
 
 	creature_mesh->SetProceduralMeshTriangles(draw_triangles);
-	region_alphas.Empty();
 }
 
 bool ACreatureActor::AddLoadedAnimation(const std::string& filename_in, const std::string& name_in)
@@ -561,10 +550,6 @@ void ACreatureActor::SetIsDisabled(bool flag_in)
 	is_disabled = flag_in;
 }
 
-void ACreatureActor::SetSetMeshMaterial(int32 ElementIndex, UMaterialInterface* InMaterial) {
-	creature_mesh->SetMaterial(ElementIndex, InMaterial);
-}
-
 void ACreatureActor::SetDriven(bool flag_in)
 {
 	is_driven = flag_in;
@@ -632,31 +617,6 @@ void ACreatureActor::ParseEvents(float deltaTime)
 
 		float diff_val_start = fabs(cur_runtime - cur_start_time);
 		const float cutoff = 0.01f;
-
-		if (register_notify_frame_map.Num() > 0) {
-			if (diff_val_start <= cutoff) {
-				register_notify_frame_queue = *register_notify_frame_map.Find(FString(cur_animation_name.c_str()));
-				register_notify_frame_queue.Sort([](const int32& LHS, const int32& RHS)  { return LHS < RHS; });
-
-				for (TArray<int32>::TIterator left_itr(register_notify_frame_queue); left_itr; ++left_itr) {
-					for (auto right_itr = left_itr + 1; right_itr;) {
-						if (*right_itr == *left_itr) {
-							register_notify_frame_queue.RemoveAt(right_itr.GetIndex());
-						}
-						else {
-							++right_itr;
-						}
-					}
-				}
-			}
-
-			if (register_notify_frame_queue.Num() > 0) {
-				if (cur_runtime > register_notify_frame_queue.Top()) {
-					CreatureAnimationNotifyEvent.Broadcast(register_notify_frame_queue.Top());
-					register_notify_frame_queue.Pop();
-				}
-			}
-		}
 
 		if ((diff_val_start <= cutoff)
 			&& !is_looping 

@@ -23,21 +23,9 @@ struct FCreatureBoneData
 	FString name;
 };
 
-USTRUCT()
-struct FAnimationNotifyFrameNode {
-	GENERATED_USTRUCT_BODY()
-
-	UPROPERTY(EditAnywhere, Category = "Components|Creature")
-	FString AnimationName;
-	
-	UPROPERTY(EditAnywhere, Category = "Components|Creature")
-	TArray<int32> NotifyFrame;
-};
-
 // Blueprint event delegates event declarations
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCreatureAnimationStartEvent, float, frame);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCreatureAnimationEndEvent, float, frame);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCreatureAnimationNotifyEvent, float, frame);
 
 UCLASS(Blueprintable)
 class ACreatureActor : public AActor
@@ -71,12 +59,9 @@ protected:
 
 	FCriticalSection  msg_lock;
 
-	TArray<int32> register_notify_frame_queue;
-	TMap< FString, TArray<int32> > register_notify_frame_map;
-
 	void UpdateCreatureRender();
 
-
+	bool InitCreatureRender();
 
 	void FillBoneData();
 
@@ -88,9 +73,6 @@ protected:
 
 public:
 	ACreatureActor();
-
-	UFUNCTION(BlueprintCallable, Category = "Components|Creature")
-	bool InitCreatureRender();
 
 	// Allow viewing/changing the Material ot the procedural Mesh in editor (if placed in a level at construction)
 	UPROPERTY(VisibleAnywhere, Category=Materials)
@@ -139,15 +121,9 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category = "Components|Creature")
 	FCreatureAnimationEndEvent CreatureAnimationEndEvent;
-	
-	UPROPERTY(BlueprintAssignable, Category = "Components|Creature")
-	FCreatureAnimationNotifyEvent CreatureAnimationNotifyEvent;
-
-	UPROPERTY(EditAnywhere, Category = "Components|Creature")
-	TArray<FAnimationNotifyFrameNode> register_notify_frame_node_array;
 
 #if WITH_EDITOR
-	virtual void PostEditChangeProperty(FPropertyChangedEvent & PropertyChangedEvent);
+	//virtual void PostEditChangeProperty(FPropertyChangedEvent & PropertyChangedEvent);
 #endif
 
 	virtual void OnConstruction(const FTransform & Transform);
@@ -230,9 +206,6 @@ public:
 	// Blueprint function that turns on/turns off internal updates of this object
 	UFUNCTION(BlueprintCallable, Category = "Components|Creature")
 	void SetIsDisabled(bool flag_in);
-
-	UFUNCTION(BlueprintCallable, Category = "Components|Creature")
-	void SetSetMeshMaterial(int32 ElementIndex, UMaterialInterface* InMaterial);
 	
 	void SetDriven(bool flag_in);
 
