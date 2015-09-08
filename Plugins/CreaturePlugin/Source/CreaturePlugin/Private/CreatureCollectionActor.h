@@ -15,10 +15,14 @@ struct ACreatureCollectionClip
 	ACreatureCollectionClip()
 	{
 		ref_index = 0;
+		total_frames = 0.f;
+		cur_frames = 0.f;
 	}
 
 	std::vector<std::pair<ACreatureActor *, std::string> > actor_sequence;
 	int32 ref_index;
+	float total_frames;
+	float cur_frames;
 };
 
 // Blueprint event delegates event declarations
@@ -78,6 +82,12 @@ public:
 	// in the center of the bone, positve values places it to the right, negative to the left
 	UFUNCTION(BlueprintCallable, Category = "Components|Creature")
 	FTransform GetBluePrintBoneXform(FString name_in, bool world_transform, float position_slide_factor);
+
+	UFUNCTION(BlueprintPure, Category = "Components|Creature")
+	float GetBluePrintClipTotalFrames(FString clip_name);
+
+	UFUNCTION(BlueprintPure, Category = "Components|Creature")
+	float GetBluePrintClipCurFrames(FString clip_name);
 
 	UPROPERTY(BlueprintAssignable, Category = "Components|Creature")
 	FCreatureAnimationCollectionEndEvent CreatureAnimationEndEvent;

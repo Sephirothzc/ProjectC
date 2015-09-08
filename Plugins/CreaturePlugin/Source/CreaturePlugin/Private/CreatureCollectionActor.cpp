@@ -64,6 +64,13 @@ void ACreatureCollectionActor::AddBluePrintCollectionClipData(FString clipName, 
 	creatureActor->SetDriven(false);
 	creatureActor->SetBluePrintAnimationLoop(false);
 	ACreatureCollectionClip& cur_collection_clip = collection_clips[new_clip_name];
+
+	auto cur_manager = creatureActor->GetCreatureManager();
+	auto& all_actor_animations = cur_manager->GetAllAnimations();
+	if (all_actor_animations.count(real_actor_clip_name) > 0) {
+		auto& actor_animation = all_actor_animations.at(real_actor_clip_name);
+		cur_collection_clip.total_frames += actor_animation->getEndTime();
+	}
 	cur_collection_clip.actor_sequence.push_back(std::make_pair(creatureActor, real_actor_clip_name));
 }
 
@@ -109,6 +116,30 @@ ACreatureCollectionActor::GetBluePrintBoneXform(FString name_in, bool world_tran
 	}
 
 	return FTransform();
+}
+
+float ACreatureCollectionActor::GetBluePrintClipTotalFrames(FString clip_name)
+{
+	std::string new_clip_name = ConvertToString(clip_name);
+	if (collection_clips.count(new_clip_name) < 0)
+	{
+		return 0;
+	}
+
+	ACreatureCollectionClip& cur_collection_clip = collection_clips[new_clip_name];
+	return cur_collection_clip.total_frames;
+}
+
+float ACreatureCollectionActor::GetBluePrintClipCurFrames(FString clip_name)
+{
+	std::string new_clip_name = ConvertToString(clip_name);
+	if (collection_clips.count(new_clip_name) < 0)
+	{
+		return 0;
+	}
+
+	ACreatureCollectionClip& cur_collection_clip = collection_clips[new_clip_name];
+	return cur_collection_clip.cur_frames;
 }
 
 void ACreatureCollectionActor::UpdateActorAnimationToStart(ACreatureCollectionClip& collection_data)
@@ -237,6 +268,7 @@ void ACreatureCollectionActor::Tick(float DeltaTime)
 	{
 		auto& cur_collection = collection_clips[active_clip_name];
 		int& ref_index = cur_collection.ref_index;
+		float& cur_frames = cur_collection.cur_frames;
 		auto& cur_data = cur_collection.actor_sequence[ref_index];
 
 		auto cur_actor = cur_data.first;
@@ -254,6 +286,7 @@ void ACreatureCollectionActor::Tick(float DeltaTime)
 		{
 			auto& actor_animation = all_actor_animations.at(cur_data.second);
 			float cur_runtime = (cur_manager->getActualRunTime());
+			cur_frames = cur_runtime;
 			if (cur_runtime + true_delta_time >= actor_animation->getEndTime())
 			{
 				is_actor_animation_done = true;
@@ -266,6 +299,7 @@ void ACreatureCollectionActor::Tick(float DeltaTime)
 				}
 				else {
 					is_at_sequence_end = true;
+					cur_frames = 0;
 					CreatureAnimationEndEvent.Broadcast(cur_runtime);
 				}
 			}
@@ -274,6 +308,7 @@ void ACreatureCollectionActor::Tick(float DeltaTime)
 		if (is_at_sequence_end && is_looping)
 		{
 			ref_index = 0;
+			cur_frames = 0;
 			UpdateActorAnimationToStart(cur_collection);
 		}
 	}
