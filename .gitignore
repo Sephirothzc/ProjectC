@@ -8,9 +8,6 @@ ProjectC.opensdf
 ProjectC.sln
 ProjectC.sdf
 ProjectC.v12.suo
-Plugins/CreaturePlugin/Source/CreaturePlugin/CreaturePlugin.Build.cs
-Plugins/CreaturePlugin/Source/CreaturePlugin/CreaturePlugin.Build.cs
-Plugins/CreaturePlugin/Source/CreaturePlugin/CreaturePlugin.Build.cs
 *.exp
 Binaries/Win64/ProjectC-Win64-DebugGame.lib
 Binaries/Win64/ProjectC-Win64-Shipping.lib
