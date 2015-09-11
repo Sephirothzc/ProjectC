@@ -5,8 +5,7 @@
 #include "Components/ActorComponent.h"
 #include "CreatureAniState.generated.h"
 
-
-UCLASS(Blueprintable, ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
+UCLASS(ClassGroup = AniState, abstract, Blueprintable, BlueprintType, ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class PROJECTC_API UCreatureAniState : public UActorComponent
 {
 	GENERATED_BODY()
@@ -21,13 +20,13 @@ public:
 	// Called every frame
 	virtual void TickComponent( float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction ) override;
 
-	UFUNCTION(BlueprintImplementableEvent, Category = "CreatureAniState")
-	virtual void EnterState();
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "CreatureAniState")
+	virtual bool EnterState();
 
-	UFUNCTION(BlueprintImplementableEvent, Category = "CreatureAniState")
-	virtual void ExitState();
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "CreatureAniState")
+	virtual bool ExitState();
 
-	UFUNCTION(BlueprintImplementableEvent, Category = "CreatureAniState")
-	virtual void UpdateState(float delta_seconds);
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "CreatureAniState")
+	virtual bool UpdateState(float delta_seconds);
 	
 };
