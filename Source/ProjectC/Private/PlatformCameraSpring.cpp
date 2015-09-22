@@ -3,9 +3,32 @@
 #include "ProjectC.h"
 #include "PlatformCameraSpring.h"
 
+UPlatformCameraSpring::UPlatformCameraSpring(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
+{
+	if (GetOwner() != nullptr) {
+		if (GetOwner()->GetActorForwardVector().X > 0.f) {
+			FVector owner_location = GetOwner()->GetActorLocation();
+			m_is_forward_left = true;
+		}
+		else {
+			m_is_forward_left = false;
+		}
+		m_is_cur_owner_fowrard_left = m_is_forward_left;
+	}
+	CameraChangeLimit = FVector(0.f, 0.f, 0.f);
+	CameraFollowLimit = FVector(0.f, 0.f, 0.f);
+	m_is_attach_follow_point = true;
+}
+
 void UPlatformCameraSpring::OnTurnRound(FVector cur_forward)
 {
-	m_cur_forward = cur_forward;
+	if (cur_forward.X > 0.f) {
+		m_is_cur_owner_fowrard_left = true;
+	}
+	else {
+		m_is_cur_owner_fowrard_left = false;
+	}
 }
 
 
@@ -20,28 +43,51 @@ void UPlatformCameraSpring::UpdatePlatformCameraLerp(bool bDoPlatformLerp, float
 
 	FVector ArmOrigin = GetComponentLocation() + TargetOffset;
 
+	FVector ActorOrigin = GetComponentLocation();
+
 	FVector DesiredLoc = ArmOrigin;
 
-	if (bEnablePlatformCameraLerp)
-	{
-		if (m_cur_forward.X > 0.f)
-		{
-			
+	FVector FollowPoint;
+	FVector LimitPoint = DesiredLoc + CameraChangeLimit;
+
+	if (m_is_attach_follow_point) {
+		FollowPoint = DesiredLoc + CameraFollowLimit;
+	}
+	else {
+		FollowPoint = PreviousDesiredLoc + CameraFollowLimit;
+	}
+
+	if (bEnablePlatformCameraLerp) {
+		if (m_is_cur_owner_fowrard_left == m_is_forward_left) {
+			if (FollowPoint.X <= ActorOrigin.X + 1.f) {
+				m_is_attach_follow_point = true;
+			}
+			else {
+				m_is_attach_follow_point = false;
+				DesiredLoc.X = PreviousDesiredLoc.X;
+			}
 		}
-		else if (m_cur_forward.X < 0.f) {
-			DesiredLoc = PreviousDesiredLoc;
+		else {
+			if (LimitPoint.X > ActorOrigin.X + 1) {
+				TargetOffset = -TargetOffset;
+				m_is_forward_left = !m_is_forward_left;
+			}
+			else {
+				m_is_attach_follow_point = false;
+				DesiredLoc.X = PreviousDesiredLoc.X;
+			}
 		}
 	}
 
-	FVector LimitLocation = PreviousDesiredLoc + CameraChangeLimit;
+
 
 #if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
 	if (bDrawPlatformCameraLerpMarkers)
 	{
-		DrawDebugSphere(GetWorld(), ArmOrigin, 5.f, 8, FColor::Green);
-		//DrawDebugSphere(GetWorld(), DesiredLoc, 5.f, 8, FColor::Yellow);
+		DrawDebugSphere(GetWorld(), ActorOrigin, 5.f, 8, FColor::Green);
+		DrawDebugSphere(GetWorld(), FollowPoint, 5.f, 8, FColor::Yellow);
 
-		DrawDebugSphere(GetWorld(), LimitLocation, 5.f, 8, FColor::Red);
+		DrawDebugSphere(GetWorld(), LimitPoint, 5.f, 8, FColor::Red);
 		
 
 		//const FVector ToOrigin = ArmOrigin - DesiredLoc;

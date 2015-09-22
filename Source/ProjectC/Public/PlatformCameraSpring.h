@@ -11,7 +11,7 @@
 UCLASS(ClassGroup = Camera, meta = (BlueprintSpawnableComponent), hideCategories = (Mobility))
 class PROJECTC_API UPlatformCameraSpring : public USpringArmComponent
 {
-	GENERATED_BODY()
+	GENERATED_UCLASS_BODY()
 
 public:
 
@@ -25,6 +25,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlatformCamera, meta = (editcondition = "bEnablePlatformCameraLerp"))
 	FVector CameraChangeLimit;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlatformCamera, meta = (editcondition = "bEnablePlatformCameraLerp"))
+	FVector CameraFollowLimit;
+
+
 	UFUNCTION(BlueprintCallable, Category = PlatformCamera)
 	void OnTurnRound(FVector cur_forward);
 	
@@ -34,6 +38,8 @@ public:
 	virtual void UpdatePlatformCameraLerp(bool bDoPlatformLerp, float DeltaTime);
 
 private:
-	FVector m_cur_forward;
-	
+	bool m_is_forward_left;
+	bool m_is_cur_owner_fowrard_left;
+
+	bool m_is_attach_follow_point;
 };
