@@ -60,15 +60,21 @@ void UPlatformCameraSpring::UpdatePlatformCameraLerp(bool bDoPlatformLerp, float
 	if (bEnablePlatformCameraLerp) {
 		DesiredLoc.X = CalcCameraPosX(FollowPoint, LimitPoint, DeltaTime);
 
-
-		const float FromOriginZ = DesiredLoc.Z - m_pre_camera_location.Z;
-
+		float FromOriginZ = DesiredLoc.Z - m_pre_camera_location.Z;
 		if (FMath::Abs(FromOriginZ) > CameraLerpMaxDistance) {
-			DesiredLoc.Z = DesiredLoc.Z - CameraLerpMaxDistance;
+			if (FromOriginZ < 0) {
+				FromOriginZ = -CameraLerpMaxDistance;
+			}
+			else {
+				FromOriginZ = CameraLerpMaxDistance;
+			}
+			DesiredLoc.Z = m_pre_camera_location.Z + FromOriginZ;
 		}
 		else {
 			DesiredLoc.Z = FMath::FInterpTo(m_pre_camera_location.Z, DesiredLoc.Z, DeltaTime, CameraLerpSpeed);
 		}
+		FString DebugStr = FString::Printf(TEXT("%f"), DesiredLoc.Z);
+		DrawDebugString(GetWorld(), FVector(0.f, 0.f, -100.f), DebugStr);
 	}
 
 #if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
