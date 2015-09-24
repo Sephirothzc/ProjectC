@@ -58,7 +58,17 @@ void UPlatformCameraSpring::UpdatePlatformCameraLerp(bool bDoPlatformLerp, float
 	FVector FollowPoint = m_pre_camera_location + CameraFollowLimit;
 
 	if (bEnablePlatformCameraLerp) {
-		DesiredLoc.X = CalcCameraPos(FollowPoint, LimitPoint, DeltaTime);
+		DesiredLoc.X = CalcCameraPosX(FollowPoint, LimitPoint, DeltaTime);
+
+
+		const float FromOriginZ = DesiredLoc.Z - m_pre_camera_location.Z;
+
+		if (FMath::Abs(FromOriginZ) > CameraLerpMaxDistance) {
+			DesiredLoc.Z = DesiredLoc.Z - CameraLerpMaxDistance;
+		}
+		else {
+			DesiredLoc.Z = FMath::FInterpTo(m_pre_camera_location.Z, DesiredLoc.Z, DeltaTime, CameraLerpSpeed);
+		}
 	}
 
 #if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
@@ -152,7 +162,7 @@ void UPlatformCameraSpring::ChangeCameraState(PLATFORM_CAMERA_STATE next_state) 
 	EnterCameraState(next_state);
 }
 
-float UPlatformCameraSpring::CalcCameraPos(const FVector& follow_point, const FVector& limit_point, float delta_seconds) {
+float UPlatformCameraSpring::CalcCameraPosX(const FVector& follow_point, const FVector& limit_point, float delta_seconds) {
 	float ActorLocationX = GetComponentLocation().X;
 	float CameraLocationX = (GetComponentLocation() + TargetOffset).X;
 
@@ -204,12 +214,12 @@ float UPlatformCameraSpring::CalcCameraPos(const FVector& follow_point, const FV
 
 		const float FromOriginX = CameraLocationX - target_location.X;
 		if (!m_camera_move_nearly_attach) {
-			if (FromOriginX < CameraLerpMaxDistance) {
+			if (FMath::Abs(FromOriginX) < CameraLerpMaxDistance) {
 				m_camera_move_nearly_attach = true;
 			}
 		}
 		else {
-			if (FromOriginX > CameraLerpMaxDistance) {
+			if (FMath::Abs(FromOriginX) > CameraLerpMaxDistance) {
 				CameraLocationX = target_location.X + CameraLerpMaxDistance;
 			}
 		}

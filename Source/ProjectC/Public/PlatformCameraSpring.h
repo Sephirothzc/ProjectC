@@ -61,7 +61,7 @@ private:
 	void EnterCameraState(PLATFORM_CAMERA_STATE next_state);
 	void ExitCameraState(PLATFORM_CAMERA_STATE cur_state);
 	void ChangeCameraState(PLATFORM_CAMERA_STATE next_state);
-	float CalcCameraPos(const FVector& follow_point, const FVector& limit_point, float delta_seconds);
+	float CalcCameraPosX(const FVector& follow_point, const FVector& limit_point, float delta_seconds);
 
 	PLATFORM_CAMERA_STATE m_cur_camera_state;
 	bool m_is_forward_left;
