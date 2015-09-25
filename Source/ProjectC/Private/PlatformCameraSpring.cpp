@@ -45,7 +45,12 @@ void UPlatformCameraSpring::OnTurnRound(FVector cur_forward)
 
 void UPlatformCameraSpring::UpdateDesiredArmLocation(bool bDoTrace, bool bDoLocationLag, bool bDoRotationLag, float DeltaTime)
 {
-	UpdatePlatformCameraLerp(bEnablePlatformCameraLerp, DeltaTime);
+	if (bEnablePlatformCameraLerp) {
+		UpdatePlatformCameraLerp(bEnablePlatformCameraLerp, DeltaTime);
+	}
+	else {
+		Super::UpdateDesiredArmLocation(bDoTrace, bDoLocationLag, bDoRotationLag, DeltaTime);
+	}
 }
 
 void UPlatformCameraSpring::UpdatePlatformCameraLerp(bool bDoPlatformLerp, float DeltaTime)
@@ -57,7 +62,8 @@ void UPlatformCameraSpring::UpdatePlatformCameraLerp(bool bDoPlatformLerp, float
 	FVector LimitPoint = m_pre_camera_location + CameraChangeLimit;
 	FVector FollowPoint = m_pre_camera_location + CameraFollowLimit;
 
-	if (bEnablePlatformCameraLerp) {
+	bool clamped_dist = false;
+	if (bDoPlatformLerp) {
 		DesiredLoc.X = CalcCameraPosX(FollowPoint, LimitPoint, DeltaTime);
 
 		float FromOriginZ = DesiredLoc.Z - m_pre_camera_location.Z;
@@ -68,13 +74,12 @@ void UPlatformCameraSpring::UpdatePlatformCameraLerp(bool bDoPlatformLerp, float
 			else {
 				FromOriginZ = CameraLerpMaxDistance;
 			}
-			DesiredLoc.Z = m_pre_camera_location.Z + FromOriginZ;
+			DesiredLoc.Z = DesiredLoc.Z - FromOriginZ;
+			clamped_dist = true;
 		}
 		else {
 			DesiredLoc.Z = FMath::FInterpTo(m_pre_camera_location.Z, DesiredLoc.Z, DeltaTime, CameraLerpSpeed);
 		}
-		FString DebugStr = FString::Printf(TEXT("%f"), DesiredLoc.Z);
-		DrawDebugString(GetWorld(), FVector(0.f, 0.f, -100.f), DebugStr);
 	}
 
 #if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
@@ -82,11 +87,15 @@ void UPlatformCameraSpring::UpdatePlatformCameraLerp(bool bDoPlatformLerp, float
 	{
 		FVector ActorOrigin = GetComponentLocation();
 		DrawDebugSphere(GetWorld(), ActorOrigin, 5.f, 8, FColor::Green);
-		//DrawDebugSphere(GetWorld(), FollowPoint, 5.f, 8, FColor::Yellow);
-		//DrawDebugSphere(GetWorld(), LimitPoint, 5.f, 8, FColor::Red);
+		DrawDebugSphere(GetWorld(), FollowPoint, 5.f, 8, FColor::Yellow);
+		DrawDebugSphere(GetWorld(), LimitPoint, 5.f, 8, FColor::Red);
 
 		DrawDebugLine(GetWorld(), FVector(LimitPoint.X, LimitPoint.Y, -10000.f), FVector(LimitPoint.X, LimitPoint.Y, 10000.f), FColor::Red);
 		DrawDebugLine(GetWorld(), FVector(FollowPoint.X, LimitPoint.Y, -10000.f), FVector(FollowPoint.X, LimitPoint.Y, 10000.f), FColor::Yellow);
+
+		const FVector ToOrigin = FollowPoint - ActorOrigin;
+		DrawDebugDirectionalArrow(GetWorld(), ActorOrigin, ActorOrigin + ToOrigin * 0.5f, 7.5f, clamped_dist ? FColor::Red : FColor::Green);
+		DrawDebugDirectionalArrow(GetWorld(), ActorOrigin + ToOrigin * 0.5f, FollowPoint, 7.5f, clamped_dist ? FColor::Red : FColor::Green);
 	}
 #endif
 	
