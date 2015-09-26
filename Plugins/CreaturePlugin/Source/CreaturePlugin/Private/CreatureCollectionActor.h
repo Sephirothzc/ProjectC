@@ -15,14 +15,10 @@ struct ACreatureCollectionClip
 	ACreatureCollectionClip()
 	{
 		ref_index = 0;
-		total_frames = 0.f;
-		cur_frames = 0.f;
 	}
 
 	std::vector<std::pair<ACreatureActor *, std::string> > actor_sequence;
 	int32 ref_index;
-	float total_frames;
-	float cur_frames;
 };
 
 // Blueprint event delegates event declarations
@@ -39,6 +35,7 @@ protected:
 	std::string active_clip_name;
 	bool should_play;
 	std::string delay_set_clip_name;
+	bool hide_all_actors;
 
 	void UpdateActorAnimationToStart(ACreatureCollectionClip& collection_data);
 
@@ -77,17 +74,15 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Components|Creature")
 	void SetBluePrintActiveClip(FString clipName);
 
+	// Blueprints function to hide all actors belonging to this CollectionActor
+	UFUNCTION(BlueprintCallable, Category = "Components|Creature")
+	void SetBluePrintHideAllActors(bool flag_in);
+
 	// Blueprint function that returns the transform given a bone name, position_slide_factor
 	// determines how far left or right the transform is placed. The default value of 0 places it
 	// in the center of the bone, positve values places it to the right, negative to the left
 	UFUNCTION(BlueprintCallable, Category = "Components|Creature")
 	FTransform GetBluePrintBoneXform(FString name_in, bool world_transform, float position_slide_factor);
-
-	UFUNCTION(BlueprintPure, Category = "Components|Creature")
-	float GetBluePrintClipTotalFrames(FString clip_name);
-
-	UFUNCTION(BlueprintPure, Category = "Components|Creature")
-	float GetBluePrintClipCurFrames(FString clip_name);
 
 	UPROPERTY(BlueprintAssignable, Category = "Components|Creature")
 	FCreatureAnimationCollectionEndEvent CreatureAnimationEndEvent;

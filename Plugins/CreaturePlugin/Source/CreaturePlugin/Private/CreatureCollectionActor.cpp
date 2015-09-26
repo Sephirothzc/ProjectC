@@ -35,14 +35,17 @@ ACreatureCollectionActor::ACreatureCollectionActor(const FObjectInitializer& Obj
 	is_looping = true;
 	animation_speed = 2.0f;
 	should_play = true;
+	hide_all_actors = false;
 
 	default_mesh = CreateDefaultSubobject<UCustomProceduralMeshComponent>(TEXT("CreatureCollectionActor"));
 	RootComponent = default_mesh;
 
 	// Generate a single dummy triangle
+	/*
 	TArray<FProceduralMeshTriangle> triangles;
 	GenerateTriangle(triangles);
 	default_mesh->SetProceduralMeshTriangles(triangles);
+	*/
 }
 
 void ACreatureCollectionActor::AddBluePrintCollectionClipData(FString clipName, ACreatureActor * creatureActor, FString creatureActorClipName)
@@ -64,13 +67,6 @@ void ACreatureCollectionActor::AddBluePrintCollectionClipData(FString clipName, 
 	creatureActor->SetDriven(false);
 	creatureActor->SetBluePrintAnimationLoop(false);
 	ACreatureCollectionClip& cur_collection_clip = collection_clips[new_clip_name];
-
-	auto cur_manager = creatureActor->GetCreatureManager();
-	auto& all_actor_animations = cur_manager->GetAllAnimations();
-	if (all_actor_animations.count(real_actor_clip_name) > 0) {
-		auto& actor_animation = all_actor_animations.at(real_actor_clip_name);
-		cur_collection_clip.total_frames += actor_animation->getEndTime();
-	}
 	cur_collection_clip.actor_sequence.push_back(std::make_pair(creatureActor, real_actor_clip_name));
 }
 
@@ -82,6 +78,12 @@ void ACreatureCollectionActor::SetBluePrintShouldPlay(bool flag_in)
 void ACreatureCollectionActor::SetBluePrintIsLooping(bool flag_in)
 {
 	is_looping = flag_in;
+}
+
+void 
+ACreatureCollectionActor::SetBluePrintHideAllActors(bool flag_in)
+{
+	hide_all_actors = flag_in;
 }
 
 void ACreatureCollectionActor::SetBluePrintActiveClip(FString clipName)
@@ -118,30 +120,6 @@ ACreatureCollectionActor::GetBluePrintBoneXform(FString name_in, bool world_tran
 	return FTransform();
 }
 
-float ACreatureCollectionActor::GetBluePrintClipTotalFrames(FString clip_name)
-{
-	std::string new_clip_name = ConvertToString(clip_name);
-	if (collection_clips.count(new_clip_name) < 0)
-	{
-		return 0;
-	}
-
-	ACreatureCollectionClip& cur_collection_clip = collection_clips[new_clip_name];
-	return cur_collection_clip.total_frames;
-}
-
-float ACreatureCollectionActor::GetBluePrintClipCurFrames(FString clip_name)
-{
-	std::string new_clip_name = ConvertToString(clip_name);
-	if (collection_clips.count(new_clip_name) < 0)
-	{
-		return 0;
-	}
-
-	ACreatureCollectionClip& cur_collection_clip = collection_clips[new_clip_name];
-	return cur_collection_clip.cur_frames;
-}
-
 void ACreatureCollectionActor::UpdateActorAnimationToStart(ACreatureCollectionClip& collection_data)
 {
 	int& ref_index = collection_data.ref_index;
@@ -149,7 +127,7 @@ void ACreatureCollectionActor::UpdateActorAnimationToStart(ACreatureCollectionCl
 	auto cur_actor = cur_data.first;
 
 	cur_actor = cur_data.first;
-	cur_actor->SetActiveAnimation(cur_data.second);
+	cur_actor->SetBluePrintActiveAnimation(FString(cur_data.second.c_str()));
 	cur_actor->SetBluePrintAnimationResetToStart();
 }
 
@@ -199,7 +177,7 @@ ACreatureCollectionActor::AreAllActorsReady() const
 		for (auto& cur_data : collection_data.second.actor_sequence)
 		{
 			auto cur_actor = cur_data.first;
-			if (cur_actor->GetIsReadyPlay() == false)
+			if (cur_actor->GetCore().GetIsReadyPlay() == false)
 			{
 				return false;
 			}
@@ -263,12 +241,22 @@ void ACreatureCollectionActor::Tick(float DeltaTime)
 		}
 	}
 
+	// see if we need to hide everybody and return
+	if (hide_all_actors)
+	{
+		for (auto& cur_collection_data : collection_clips)
+		{
+			HideAllActors(cur_collection_data.second, nullptr);
+		}
+
+		return;
+	}
+
 	// process active clip
 	if (collection_clips.count(active_clip_name))
 	{
 		auto& cur_collection = collection_clips[active_clip_name];
 		int& ref_index = cur_collection.ref_index;
-		float& cur_frames = cur_collection.cur_frames;
 		auto& cur_data = cur_collection.actor_sequence[ref_index];
 
 		auto cur_actor = cur_data.first;
@@ -286,7 +274,6 @@ void ACreatureCollectionActor::Tick(float DeltaTime)
 		{
 			auto& actor_animation = all_actor_animations.at(cur_data.second);
 			float cur_runtime = (cur_manager->getActualRunTime());
-			cur_frames = cur_runtime;
 			if (cur_runtime + true_delta_time >= actor_animation->getEndTime())
 			{
 				is_actor_animation_done = true;
@@ -299,7 +286,6 @@ void ACreatureCollectionActor::Tick(float DeltaTime)
 				}
 				else {
 					is_at_sequence_end = true;
-					cur_frames = 0;
 					CreatureAnimationEndEvent.Broadcast(cur_runtime);
 				}
 			}
@@ -308,7 +294,6 @@ void ACreatureCollectionActor::Tick(float DeltaTime)
 		if (is_at_sequence_end && is_looping)
 		{
 			ref_index = 0;
-			cur_frames = 0;
 			UpdateActorAnimationToStart(cur_collection);
 		}
 	}

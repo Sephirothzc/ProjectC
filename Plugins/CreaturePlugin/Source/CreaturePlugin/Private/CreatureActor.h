@@ -2,26 +2,18 @@
 
 #pragma once
 
+#include <memory>
 #include "GameFramework/Actor.h"
 #include "CreatureModule.h"
 #include <map>
 
 #include "CustomProceduralMeshComponent.h"
+#include "CreatureCore.h"
 #include "CreatureActor.generated.h"
 
 /**
  * 
  */
-
-struct FCreatureBoneData
-{
-	FVector point1;
-	FVector point2;
-	FTransform xform;
-	FTransform startXform;
-	FTransform endXform;
-	FString name;
-};
 
 // Blueprint event delegates event declarations
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCreatureAnimationStartEvent, float, frame);
@@ -33,43 +25,13 @@ class ACreatureActor : public AActor
 	GENERATED_UCLASS_BODY()
 
 protected:
-	TArray<FProceduralMeshTriangle> draw_triangles;
-
-	std::shared_ptr<CreatureModule::CreatureManager> creature_manager;
-
-	TArray<FCreatureBoneData> bone_data;
-
-	TArray<uint8> region_alphas;
-
-	TMap<FString, uint8> region_alpha_map;
-
-	TArray<FString> region_custom_order;
-
-	FString absolute_creature_filename;
-
-	bool should_play, is_looping;
-
-	bool play_start_done, play_end_done;
-
-	bool is_disabled;
-
-	bool is_driven;
-
-	bool is_ready_play;
-
-	FCriticalSection  msg_lock;
-
-	void UpdateCreatureRender();
-
-	bool InitCreatureRender();
-
-	void FillBoneData();
-
-	void ParseEvents(float deltaTime);
+	CreatureCore creature_core;
 
 	void InitStandardValues();
 
-	void ProcessRenderRegions(TArray<FProceduralMeshTriangle>& draw_tris);
+	void UpdateCoreValues();
+
+	void PrepareRenderData();
 
 public:
 	ACreatureActor();
@@ -128,18 +90,6 @@ public:
 
 	virtual void OnConstruction(const FTransform & Transform);
 
-	// Loads a data packet from a file
-	static void LoadDataPacket(const std::string& filename_in);
-
-	// Loads an animation from a file
-	static void LoadAnimation(const std::string& filename_in, const std::string& name_in);
-
-	// Loads the creature character from a file
-	void LoadCreature(const std::string& filename_in);
-
-	// Adds a loaded animation onto the creature character
-	bool AddLoadedAnimation(const std::string& filename_in, const std::string& name_in);
-
 	// Returns the CreatureManager associated with this actor
 	CreatureModule::CreatureManager * GetCreatureManager();
 
@@ -154,6 +104,17 @@ public:
 	// Blueprint version of setting a custom time range for a given animation
 	UFUNCTION(BlueprintCallable, Category = "Components|Creature")
 	void SetBluePrintAnimationCustomTimeRange(FString name_in, int32 start_time, int32 end_time);
+
+	// Blueprint function to create a point cache for the creature character. This speeds up the playback performance.
+	// A small amount of time will be spent precomputing the point cache. You can reduce this time by increasing the approximation level.
+	// name_in is the name of the animation to cache, approximation_level is the approximation level. The higher the approximation level
+	// the faster the cache generation but lower the quality. 1 means no approximation, with 10 being the maximum value allowed.
+	UFUNCTION(BlueprintCallable, Category = "Components|Creature")
+	void MakeBluePrintPointCache(FString name_in, int32 approximation_level);
+
+	// Blueprint function to clear the point cache of a given animation
+	UFUNCTION(BlueprintCallable, Category = "Components|Creature")
+	void ClearBluePrintPointCache(FString name_in, int32 approximation_level);
 
 	// Blueprint function that returns the transform given a bone name, position_slide_factor
 	// determines how far left or right the transform is placed. The default value of 0 places it
@@ -197,25 +158,22 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Components|Creature")
 	void ClearBluePrintRegionCustomOrder();
 
-	// Sets the an active animation by name
-	void SetActiveAnimation(const std::string& name_in);
-
-	// Sets the active animation by smoothly blending, factor is a range of ( 0 < factor < 1 )
-	void SetAutoBlendActiveAnimation(const std::string& name_in, float factor);
-
 	// Blueprint function that turns on/turns off internal updates of this object
 	UFUNCTION(BlueprintCallable, Category = "Components|Creature")
 	void SetIsDisabled(bool flag_in);
-	
+
 	void SetDriven(bool flag_in);
 
-	bool GetIsReadyPlay() const;
+	CreatureCore& GetCore();
 
 	// Update callback
 	virtual void Tick(float DeltaTime) override;
 
 	// Called on startup
 	virtual void BeginPlay();
+
+	UFUNCTION(BlueprintCallable, Category = "Rendering", meta = (DisplayName = "Set Actor Hidden In Game", Keywords = "Visible Hidden Show Hide"))
+	virtual void SetActorHiddenInGame(bool bNewHidden) override;
 
 	void GenerateTriangle(TArray<FProceduralMeshTriangle>& OutTriangles);
 };

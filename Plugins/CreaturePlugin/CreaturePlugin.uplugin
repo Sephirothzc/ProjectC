@@ -15,7 +15,7 @@
 	[
 		{
 			"Name" : "CreaturePlugin",
-			"Type" : "Developer"
+			"Type" : "Runtime"
 		}
 	]
 }
