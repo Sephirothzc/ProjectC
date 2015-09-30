@@ -356,3 +356,7 @@ void ACreatureActor::GenerateTriangle(TArray<FProceduralMeshTriangle>& OutTriang
 	triangle.Vertex2.V = 0.75f;
 	OutTriangles.Add(triangle);
 }
+
+bool ACreatureActor::ShouldTickIfViewportsOnly() const {
+	return true;
+}

@@ -176,4 +176,6 @@ public:
 	virtual void SetActorHiddenInGame(bool bNewHidden) override;
 
 	void GenerateTriangle(TArray<FProceduralMeshTriangle>& OutTriangles);
+
+	virtual bool ShouldTickIfViewportsOnly() const override;
 };
