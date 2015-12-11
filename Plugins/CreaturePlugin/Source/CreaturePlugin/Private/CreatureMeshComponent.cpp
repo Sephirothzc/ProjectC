@@ -1,5 +1,12 @@
-#include "CustomProceduralMesh.h"
+
+#include "CreaturePluginPCH.h"
 #include "CreatureMeshComponent.h"
+#include "CreatureAnimStateMachine.h"
+//////////////////////////////////////////////////////////////////////////
+//Changed by god of pen
+//////////////////////////////////////////////////////////////////////////
+#include "CreatureAnimationClipsStore.h"
+#include "CreatureAnimStateMachineInstance.h"
 
 static void GenerateTriangle(TArray<FProceduralMeshTriangle>& OutTriangles)
 {
@@ -214,7 +221,7 @@ void UCreatureMeshComponent::InitStandardValues()
 	smooth_transitions = false;
 	bone_data_size = 0.01f;
 	bone_data_length_factor = 0.02f;
-	creature_bounds_scale = 15.0f;
+	creature_bounds_scale = 1.0f;
 	creature_debug_draw = false;
 	creature_bounds_offset = FVector(0, 0, 0);
 	region_overlap_z_delta = 0.01f;
@@ -222,6 +229,7 @@ void UCreatureMeshComponent::InitStandardValues()
 	active_collection_clip = nullptr;
 	active_collection_loop = true;
 	active_collection_play = true;
+	creature_animation_asset = nullptr;
 
 	// Generate a single dummy triangle
 	/*
@@ -234,6 +242,12 @@ void UCreatureMeshComponent::InitStandardValues()
 void UCreatureMeshComponent::UpdateCoreValues()
 {
 	creature_core.creature_filename = creature_filename;
+
+	if (creature_animation_asset) {
+		creature_core.pJsonData = &creature_animation_asset->GetJsonString();
+		creature_core.creature_asset_filename = creature_animation_asset->GetCreatureFilename();
+	}
+
 	creature_core.bone_data_size = bone_data_size;
 	creature_core.bone_data_length_factor = bone_data_length_factor;
 	creature_core.region_overlap_z_delta = region_overlap_z_delta;
@@ -456,7 +470,14 @@ UCreatureMeshComponent::GetCollectionDataFromClip(FCreatureMeshCollectionClip * 
 void UCreatureMeshComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
+	//////////////////////////////////////////////////////////////////////////
+	//ChangedByGod of Pen
+	//////////////////////////////////////////////////////////////////////////
+	if (StateMachineInstance !=nullptr)
+	{
+		StateMachineInstance->GetCurrentState()->CheckCondition(StateMachineInstance);
+	}
+	
 	if (enable_collection_playback)
 	{
 		RunCollectionTick(DeltaTime);
@@ -477,8 +498,10 @@ void UCreatureMeshComponent::OnRegister()
 
 void UCreatureMeshComponent::StandardInit()
 {
+	LoadAnimationFromStore();
 	UpdateCoreValues();
 
+	creature_core.do_file_warning = !enable_collection_playback;
 	bool retval = creature_core.InitCreatureRender();
 	creature_core.region_alpha_map.Empty();
 
@@ -492,7 +515,6 @@ void UCreatureMeshComponent::StandardInit()
 void UCreatureMeshComponent::CollectionInit()
 {
 	RecreateRenderProxy(true);
-
 	for (auto& cur_data : collectionData)
 	{
 		auto& cur_core = cur_data.creature_core;
@@ -501,6 +523,13 @@ void UCreatureMeshComponent::CollectionInit()
 		cur_core.bone_data_size = bone_data_size;
 		cur_core.bone_data_length_factor = bone_data_length_factor;
 		cur_core.region_overlap_z_delta = region_overlap_z_delta;
+		//////////////////////////////////////////////////////////////////////////
+		//changed by God of Pen
+		//////////////////////////////////////////////////////////////////////////
+		if (cur_data.creature_core.pJsonData!=nullptr)
+		{
+			cur_core.pJsonData = cur_data.creature_core.pJsonData;
+		}
 
 		bool retval = cur_core.InitCreatureRender();
 		if (retval)
@@ -522,6 +551,9 @@ FPrimitiveSceneProxy* UCreatureMeshComponent::CreateSceneProxy()
 
 	for (auto& cur_data : collectionData)
 	{
+		//////////////////////////////////////////////////////////////////////////
+		//Changed by God of PEn
+		//////////////////////////////////////////////////////////////////////////
 		if (cur_data.ProceduralMeshTris.Num() <= 0)
 		{
 			CollectionInit();
@@ -550,4 +582,27 @@ FPrimitiveSceneProxy* UCreatureMeshComponent::CreateSceneProxy()
 
 	return Proxy;
 }
+void UCreatureMeshComponent::BeginPlay()
+{
+	Super::BeginPlay();
+	if (StateMachineAsset != nullptr)
+	{
+		// copy the state machine asset to an instance for exclusive use by this component
+		// necessary because multiple components may share the same asset, so we need our own data for this instance
 
+		StateMachineInstance = NewObject<UCreatureAnimStateMachineInstance>(this);
+
+		StateMachineInstance->InitInstance(StateMachineAsset);
+	}
+}
+
+void UCreatureMeshComponent::LoadAnimationFromStore()
+{
+	if (ClipStore==nullptr)
+	{
+		return;
+	}
+	collectionData.Empty();
+	collectionClips.Empty();
+	ClipStore->LoadAnimationDataToComponent(this);
+}

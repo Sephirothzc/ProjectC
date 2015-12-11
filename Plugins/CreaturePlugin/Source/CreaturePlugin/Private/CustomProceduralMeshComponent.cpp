@@ -2,7 +2,7 @@
 //
 // forked from "Engine/Plugins/Runtime/CustomMeshComponent/Source/CustomMeshComponent/Private/CustomMeshComponent.cpp"
 
-#include "CustomProceduralMesh.h"
+#include "CreaturePluginPCH.h"
 #include "DynamicMeshBuilder.h"
 #include "CustomProceduralMeshComponent.h"
 #include "Runtime/Launch/Resources/Version.h"
@@ -591,6 +591,15 @@ void UCustomProceduralMeshComponent::ProcessCalcBounds()
 		vecMidPt = (vecMax + vecMin) * 0.5f;
 		vecMax = (vecMax - vecMidPt) * lScaleVec + vecMidPt;
 		vecMin = (vecMin - vecMidPt) * lScaleVec + vecMidPt;
+
+		if ((vecMin.X <= -bounds_max_scalar) || (vecMin.Y <= -bounds_max_scalar) || (vecMin.Z <= -bounds_max_scalar)
+			|| (vecMin.X >= bounds_max_scalar) || (vecMin.Y >= bounds_max_scalar) || (vecMin.Z >= bounds_max_scalar) ||
+			(vecMax.X <= -bounds_max_scalar) || (vecMax.Y <= -bounds_max_scalar) || (vecMax.Z <= -bounds_max_scalar)
+			|| (vecMax.X >= bounds_max_scalar) || (vecMax.Y >= bounds_max_scalar) || (vecMax.Z >= bounds_max_scalar))
+		{
+			vecMin.Set(-bounds_max_scalar, -bounds_max_scalar, -bounds_max_scalar);
+			vecMax.Set(bounds_max_scalar, bounds_max_scalar, bounds_max_scalar);
+		}
 
 		FTransform curXForm = extraXForm;
 

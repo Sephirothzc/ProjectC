@@ -13,9 +13,14 @@
 	
 	"Modules" :
 	[
-		{
-			"Name" : "CreaturePlugin",
-			"Type" : "Runtime"
+        {
+            "Name": "CreaturePlugin",
+            "Type": "Runtime",
+            "LoadingPhase": "PreDefault"
+        },
+        {
+			"Name" : "CreatureEditor",
+			"Type" : "Editor"
 		}
 	]
 }

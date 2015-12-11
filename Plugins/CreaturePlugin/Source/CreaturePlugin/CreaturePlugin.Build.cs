@@ -11,8 +11,7 @@ namespace UnrealBuildTool.Rules
 
         private string ThirdPartyPath
         {
-            get { return Path.GetFullPath(Path.Combine(ModulePath, "../../../../ThirdParty/")); }
-            //get { return "c:\\Work\\NewPluginTest\\MyProject\\ThirdParty"; }
+            get { return Path.GetFullPath(Path.Combine(ModulePath, "../ThirdParty/")); }
         }
 
         public bool LoadCreatureLib(TargetInfo Target)
@@ -27,6 +26,20 @@ namespace UnrealBuildTool.Rules
                 string LibrariesPath = Path.Combine(ThirdPartyPath, "CreatureLib", "Libraries");
 
                 PublicAdditionalLibraries.Add(Path.Combine(LibrariesPath, "CreatureLib." + PlatformString + ".lib"));
+            }
+            else if (Target.Platform == UnrealTargetPlatform.Mac)
+            {
+                isLibrarySupported = true;
+                string LibrariesPath = Path.Combine(ThirdPartyPath, "CreatureLib", "Libraries");
+                PublicAdditionalLibraries.Add(Path.Combine(LibrariesPath, "libCreatureUE4Core.a"));
+            }
+            else if (Target.Platform == UnrealTargetPlatform.HTML5)
+            {
+                isLibrarySupported = true;
+                string LibrariesPath = Path.Combine(ThirdPartyPath, "CreatureLib", "Libraries");
+                PublicAdditionalLibraries.Add(Path.Combine(LibrariesPath, "CreatureHTML5.bc"));
+
+                Definitions.Add(" GLM_FORCE_RADIANS");
             }
 
             if (isLibrarySupported)
