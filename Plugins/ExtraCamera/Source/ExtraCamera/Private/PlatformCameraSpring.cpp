@@ -24,15 +24,17 @@ UPlatformCameraSpring::UPlatformCameraSpring(const FObjectInitializer& ObjectIni
 	CameraLerpTolerance = 5.f;
 
 	m_cur_camera_state = PLATFORM_CAMERA_STATE_NONE;
+	m_is_camera_restore_z = false;
+	m_is_camera_init = false;
 }
 
 void UPlatformCameraSpring::BeginPlay() {
 	m_pre_camera_location = GetComponentLocation() + TargetOffset;
 	ChangeCameraState(PLATFORM_CAMERA_STATE_RIGHT);
+	m_is_camera_init = true;
 }
 
-void UPlatformCameraSpring::OnTurnRound(FVector cur_forward)
-{
+void UPlatformCameraSpring::OnTurnRound(FVector cur_forward) {
 	if (cur_forward.X > 0.f) {
 		m_is_cur_owner_fowrard_left = true;
 	}
@@ -41,6 +43,9 @@ void UPlatformCameraSpring::OnTurnRound(FVector cur_forward)
 	}
 }
 
+void UPlatformCameraSpring::OnLanded() {
+	m_is_camera_restore_z = true;
+}
 
 void UPlatformCameraSpring::UpdateDesiredArmLocation(bool bDoTrace, bool bDoLocationLag, bool bDoRotationLag, float DeltaTime)
 {
@@ -64,21 +69,21 @@ void UPlatformCameraSpring::UpdatePlatformCameraLerp(bool bDoPlatformLerp, float
 	bool clamped_dist = false;
 	if (bDoPlatformLerp) {
 		DesiredLoc.X = CalcCameraPosX(FollowPoint, LimitPoint, DeltaTime);
-
-		float FromOriginZ = DesiredLoc.Z - m_pre_camera_location.Z;
-		if (FMath::Abs(FromOriginZ) > CameraLerpMaxDistance) {
-			if (FromOriginZ < 0) {
-				FromOriginZ = -CameraLerpMaxDistance;
-			}
-			else {
-				FromOriginZ = CameraLerpMaxDistance;
-			}
-			DesiredLoc.Z = DesiredLoc.Z - FromOriginZ;
-			clamped_dist = true;
-		}
-		else {
-			DesiredLoc.Z = FMath::FInterpTo(m_pre_camera_location.Z, DesiredLoc.Z, DeltaTime, CameraLerpSpeed);
-		}
+		DesiredLoc.Z = CalcCameraPosZ(FollowPoint, DeltaTime);
+		//float FromOriginZ = DesiredLoc.Z - m_pre_camera_location.Z;
+		//if (FMath::Abs(FromOriginZ) > CameraLerpMaxDistance) {
+		//	if (FromOriginZ < 0) {
+		//		FromOriginZ = -CameraLerpMaxDistance;
+		//	}
+		//	else {
+		//		FromOriginZ = CameraLerpMaxDistance;
+		//	}
+		//	DesiredLoc.Z = DesiredLoc.Z - FromOriginZ;
+		//	clamped_dist = true;
+		//}
+		//else {
+		//	DesiredLoc.Z = FMath::FInterpTo(m_pre_camera_location.Z, DesiredLoc.Z, DeltaTime, CameraLerpSpeed);
+		//}
 	}
 
 #if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
@@ -91,6 +96,7 @@ void UPlatformCameraSpring::UpdatePlatformCameraLerp(bool bDoPlatformLerp, float
 
 		DrawDebugLine(GetWorld(), FVector(LimitPoint.X, LimitPoint.Y, -10000.f), FVector(LimitPoint.X, LimitPoint.Y, 10000.f), FColor::Red);
 		DrawDebugLine(GetWorld(), FVector(FollowPoint.X, LimitPoint.Y, -10000.f), FVector(FollowPoint.X, LimitPoint.Y, 10000.f), FColor::Yellow);
+		DrawDebugLine(GetWorld(), FVector(-10000.f, FollowPoint.Y, FollowPoint.Z), FVector(10000.f, FollowPoint.Y, FollowPoint.Z), FColor::Blue);
 
 		const FVector ToOrigin = FollowPoint - ActorOrigin;
 		DrawDebugDirectionalArrow(GetWorld(), ActorOrigin, ActorOrigin + ToOrigin * 0.5f, 7.5f, clamped_dist ? FColor::Red : FColor::Green);
@@ -130,16 +136,16 @@ void UPlatformCameraSpring::EnterCameraState(PLATFORM_CAMERA_STATE next_state) {
 		break;
 
 	case UPlatformCameraSpring::PLATFORM_CAMERA_STATE_MOVE_LEFT:
-		TargetOffset = -TargetOffset;
-		CameraChangeLimit = -CameraChangeLimit;
-		CameraFollowLimit = -CameraFollowLimit;
+		TargetOffset.X = -TargetOffset.X;
+		CameraChangeLimit.X = -CameraChangeLimit.X;
+		CameraFollowLimit.X = -CameraFollowLimit.X;
 		m_camera_move_nearly_attach = false;
 		break;
 
 	case UPlatformCameraSpring::PLATFORM_CAMERA_STATE_MOVE_RIGHT:
-		TargetOffset = -TargetOffset;
-		CameraChangeLimit = -CameraChangeLimit;
-		CameraFollowLimit = -CameraFollowLimit;
+		TargetOffset.X = -TargetOffset.X;
+		CameraChangeLimit.X = -CameraChangeLimit.X;
+		CameraFollowLimit.X = -CameraFollowLimit.X;
 		m_camera_move_nearly_attach = false;
 		break;
 
@@ -255,4 +261,31 @@ float UPlatformCameraSpring::CalcCameraPosX(const FVector& follow_point, const F
 	}
 
 	return CameraLocationX;
+}
+
+float UPlatformCameraSpring::CalcCameraPosZ(const FVector& follow_point, float delta_seconds) {
+	float ActorLocationZ = GetComponentLocation().Z;
+	float CameraLocationZ = (GetComponentLocation() + TargetOffset).Z;
+
+	if (!m_is_camera_init) {
+		return CameraLocationZ;
+	}
+
+	if (m_is_camera_restore_z) {
+		float target_z = 0.0f;
+		target_z = FMath::FInterpTo(m_pre_camera_location.Z, CameraLocationZ, delta_seconds, CameraLerpSpeed);
+		if (FMath::Abs(m_pre_camera_location.Z - CameraLocationZ) < CameraLerpTolerance) {
+			m_is_camera_restore_z = false;
+			target_z = CameraLocationZ;
+		}
+		return target_z;
+	}
+	else {
+		if (ActorLocationZ < follow_point.Z) {
+			return CameraLocationZ;
+		}
+		else {
+			return m_pre_camera_location.Z;
+		}
+	}
 }

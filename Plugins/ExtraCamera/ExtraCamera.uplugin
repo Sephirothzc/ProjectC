@@ -4,12 +4,12 @@
 	"VersionName": "1.0",
 	"FriendlyName": "ExtraCamera",
 	"Description": "This plugin include some extra cameras",
-	"Category": "Other",
-	"CreatedBy": "",
+	"Category": "Camera",
+	"CreatedBy": "Sephirothzc",
 	"CreatedByURL": "",
 	"DocsURL": "",
 	"MarketplaceURL": "",
-	"SupportURL": "",
+	"SupportURL": "Sephirothzc@hotmail.com",
 	"Modules": [
 		{
 			"Name": "ExtraCamera",

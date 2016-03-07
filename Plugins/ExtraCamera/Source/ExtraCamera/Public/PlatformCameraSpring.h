@@ -38,9 +38,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlatformCamera, meta = (editcondition = "bEnablePlatformCameraLerp"))
 	float CameraLerpTolerance;
 	
-
 	UFUNCTION(BlueprintCallable, Category = PlatformCamera)
 	void OnTurnRound(FVector cur_forward);
+
+	UFUNCTION(BlueprintCallable, Category = PlatformCamera)
+	void OnLanded();
 	
 	//重写此函数，防止原有的控制逻辑影响当前的控制逻辑
 	virtual void UpdateDesiredArmLocation(bool bDoTrace, bool bDoLocationLag, bool bDoRotationLag, float DeltaTime);
@@ -63,14 +65,16 @@ private:
 	void ExitCameraState(PLATFORM_CAMERA_STATE cur_state);
 	void ChangeCameraState(PLATFORM_CAMERA_STATE next_state);
 	float CalcCameraPosX(const FVector& follow_point, const FVector& limit_point, float delta_seconds);
+	float CalcCameraPosZ(const FVector& follow_point, float delta_seconds);
 
 	PLATFORM_CAMERA_STATE m_cur_camera_state;
 	bool m_is_forward_left;
 	bool m_is_cur_owner_fowrard_left;
 
 	bool m_is_attach_follow_point;
-
 	bool m_camera_move_nearly_attach;
+	bool m_is_camera_restore_z;
+	bool m_is_camera_init;
 
 	FVector m_pre_camera_location;
 };
